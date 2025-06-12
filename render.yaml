@@ -1,0 +1,69 @@
+# render.yaml - Guia de instalação para a plataforma Render
+
+# O 'previews: enabled' permite que o Render crie ambientes de teste
+# para cada Pull Request no seu repositório. É uma ótima prática.
+previews: enabled
+
+services:
+  # Serviço 1: Sua aplicação principal em Flask
+  - type: web
+    name: app-chamados
+    runtime: python
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "gunicorn 'app:create_app()'"
+    healthCheckPath: "/" # Render verifica se seu app está saudável nesta rota
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+      - key: DATABASE_URL
+        fromGroup: segredos-chamados # Puxa do grupo de segredos
+      - key: GLPI_URL
+        fromService:
+          type: web
+          name: glpi
+          property: url
+      - key: GLPI_APP_TOKEN
+        fromGroup: segredos-chamados
+      - key: GLPI_USER_TOKEN
+        fromGroup: segredos-chamados
+      - key: GLPI_WEBHOOK_SECRET
+        fromGroup: segredos-chamados
+
+  # Serviço 2: GLPI rodando em um contêiner Docker pronto
+  - type: web
+    name: glpi
+    image:
+      url: diouxx/glpi:latest # Imagem Docker da comunidade, testada e pronta
+    envVars:
+      - key: TZ
+        value: "America/Sao_Paulo"
+    disks:
+      - name: glpi-data-files
+        mountPath: /var/www/html/files
+        sizeGB: 10
+      - name: glpi-data-config
+        mountPath: /var/www/html/config
+        sizeGB: 1
+      - name: glpi-data-plugins
+        mountPath: /var/www/html/plugins
+        sizeGB: 1
+
+  # Serviço 3: Grafana rodando no contêiner Docker oficial
+  - type: web
+    name: grafana
+    image:
+      url: grafana/grafana-oss:latest
+    envVars:
+      - key: GF_SERVER_ROOT_URL
+        fromService:
+          type: web
+          name: grafana
+          property: url
+      - key: GF_SECURITY_ADMIN_USER
+        value: "admin"
+      - key: GF_SECURITY_ADMIN_PASSWORD
+        fromGroup: segredos-chamados # Puxa a senha do grupo de segredos
+    disks:
+      - name: grafana-data
+        mountPath: /var/lib/grafana
+        sizeGB: 5
