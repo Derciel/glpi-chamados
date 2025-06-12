@@ -1,8 +1,7 @@
-# render.yaml - Guia de instalação para a plataforma Render
+# render.yaml - Versão Corrigida
 
-# O 'previews: enabled' permite que o Render crie ambientes de teste
-# para cada Pull Request no seu repositório. É uma ótima prática.
-previews: enabled
+# CORREÇÃO: A chave correta é 'previewsEnabled' com o valor booleano 'true'.
+previewsEnabled: true
 
 services:
   # Serviço 1: Sua aplicação principal em Flask
@@ -11,12 +10,12 @@ services:
     runtime: python
     buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
     startCommand: "gunicorn 'app:create_app()'"
-    healthCheckPath: "/" # Render verifica se seu app está saudável nesta rota
+    healthCheckPath: "/"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.4
       - key: DATABASE_URL
-        fromGroup: segredos-chamados # Puxa do grupo de segredos
+        fromGroup: segredos-chamados
       - key: GLPI_URL
         fromService:
           type: web
@@ -33,10 +32,11 @@ services:
   - type: web
     name: glpi
     image:
-      url: diouxx/glpi:latest # Imagem Docker da comunidade, testada e pronta
+      url: diouxx/glpi:latest
     envVars:
       - key: TZ
         value: "America/Sao_Paulo"
+    # A seção de discos está correta e agora será lida corretamente
     disks:
       - name: glpi-data-files
         mountPath: /var/www/html/files
@@ -62,7 +62,7 @@ services:
       - key: GF_SECURITY_ADMIN_USER
         value: "admin"
       - key: GF_SECURITY_ADMIN_PASSWORD
-        fromGroup: segredos-chamados # Puxa a senha do grupo de segredos
+        fromGroup: segredos-chamados
     disks:
       - name: grafana-data
         mountPath: /var/lib/grafana
